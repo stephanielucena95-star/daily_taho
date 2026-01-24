@@ -15,7 +15,7 @@ interface NewsCardProps {
 export const NewsCard: React.FC<NewsCardProps> = ({ article, isHero = false, index = 0, dataSaver = false, onSummaryClick }) => {
   const [imageError, setImageError] = useState(false);
   const theme = CATEGORY_THEME[article.category] || CATEGORY_THEME.Lahat;
-  
+
   // Rule: Do not fetch images if Data Saver is ON
   const shouldShowImage = !dataSaver && !!article.imageUrl && article.imageUrl.trim() !== '' && !imageError;
 
@@ -28,9 +28,9 @@ export const NewsCard: React.FC<NewsCardProps> = ({ article, isHero = false, ind
   };
 
   return (
-    <a 
+    <a
       href={article.url || '#'}
-      target="_blank" 
+      target="_blank"
       rel="noopener noreferrer"
       onClick={handleCardClick}
       className="flex flex-col bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-4 transition-all duration-300 hover:shadow-md active:scale-[0.99] cursor-pointer group no-underline text-inherit block"
@@ -38,8 +38,8 @@ export const NewsCard: React.FC<NewsCardProps> = ({ article, isHero = false, ind
       {/* Image Section - Deferred or Disabled for Data Saver */}
       {shouldShowImage && (
         <div className={`${isHero ? 'h-56' : 'h-48'} w-full relative overflow-hidden bg-gray-50`}>
-          <img 
-            src={article.imageUrl} 
+          <img
+            src={article.imageUrl}
             alt={article.title}
             width="800"
             height={isHero ? "450" : "400"}
@@ -48,7 +48,7 @@ export const NewsCard: React.FC<NewsCardProps> = ({ article, isHero = false, ind
             onError={() => setImageError(true)}
           />
           <div className="absolute top-3 left-3">
-            <span 
+            <span
               className="px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest shadow-sm"
               style={{ backgroundColor: theme.bg, color: theme.text }}
             >
@@ -60,10 +60,10 @@ export const NewsCard: React.FC<NewsCardProps> = ({ article, isHero = false, ind
 
       {/* Content Section */}
       <div className={`p-5 flex flex-col ${!shouldShowImage ? 'border-t-4' : ''}`} style={!shouldShowImage ? { borderTopColor: theme.bg } : {}}>
-        
+
         <div className="flex items-center gap-2 mb-2">
           {!shouldShowImage && (
-             <span 
+            <span
               className="px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest mr-1"
               style={{ backgroundColor: theme.bg, color: theme.text }}
             >
@@ -79,17 +79,15 @@ export const NewsCard: React.FC<NewsCardProps> = ({ article, isHero = false, ind
           {article.title}
         </h2>
 
-        <p className={`text-gray-600 leading-relaxed line-clamp-3 mb-5 ${isHero ? 'text-sm' : 'text-xs'}`}>
-          {article.summaryEnglish}
-        </p>
+
 
         <div className="flex items-center justify-between mt-auto">
           <div className="flex items-center text-[10px] text-gray-400 font-bold gap-1">
             <ClockIcon className="w-3 h-3" />
             <span className="uppercase tracking-widest">{article.readTime}</span>
           </div>
-          
-          <div 
+
+          <div
             role="button"
             onClick={(e) => {
               e.preventDefault();

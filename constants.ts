@@ -55,3 +55,14 @@ export const CATEGORIES = [
   NewsCategory.TEKNOLOHIYA,
   NewsCategory.GLOBAL,
 ];
+
+export const CATEGORY_KEYWORDS: Record<NewsCategory, string[]> = {
+  [NewsCategory.ALL]: [],
+  [NewsCategory.BREAKING]: [], // Usually handled by recency/source, but can add urgent keywords
+  [NewsCategory.POLITICS]: ['senate', 'congress', 'president', 'marcos', 'duterte', 'law', 'bill', 'batang q', 'government', 'halalan', 'election', 'court', 'pbbu', 'policy', 'official', 'department'],
+  [NewsCategory.ECONOMY]: ['inflation', 'price', 'market', 'stock', 'peso', 'dollar', 'dbm', 'dof', 'neda', 'bsp', 'tax', 'business', 'economy', 'trade', 'investment', 'presyo', 'ili', 'bank'],
+  [NewsCategory.SPORTS]: ['nba', 'pba', 'basketball', 'volleyball', 'boxing', 'mpl', 'ginebra', 'magnolia', 'san miguel', 'olympics', 'fiba', 'game', 'score', 'tournament', 'championship', 'athlete'],
+  [NewsCategory.ENTERTAINMENT]: ['showbiz', 'celebrity', 'movie', 'film', 'concert', 'actor', 'actress', 'star', 'drama', 'kapuso', 'kapamilya', 'gma', 'abs-cbn', 'entertainment', 'idol'],
+  [NewsCategory.TEKNOLOHIYA]: ['tech', 'gadget', 'phone', 'app', 'ai', 'cyber', 'internet', 'digital', 'software', 'hardware', 'science', 'space', 'innovation', 'robot', 'computer'],
+  [NewsCategory.GLOBAL]: ['us ', 'china', 'japan', 'ukraine', 'russia', 'gaza', 'israel', 'un', 'world', 'international', 'foreign', 'trump', 'biden', 'war', 'global'],
+};
