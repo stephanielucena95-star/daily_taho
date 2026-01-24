@@ -1,0 +1,1 @@
+// Consolidated into App.tsx logic for performance and container-first strictness.

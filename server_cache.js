@@ -1,0 +1,1 @@
+// Cache logic moved to App.tsx using browser localStorage for better mobile performance.
