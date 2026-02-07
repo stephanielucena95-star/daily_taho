@@ -51,6 +51,7 @@ export const ArticleDetail: React.FC<ArticleDetailProps> = ({ article, onBack })
     filipinoSummary,
     isStreamingEnglish,
     isStreamingFilipino,
+    error,
     startSummarizing
   } = useStreamingSummary();
 
@@ -168,8 +169,8 @@ export const ArticleDetail: React.FC<ArticleDetailProps> = ({ article, onBack })
               <div className="space-y-6">
                 <p className="text-[18px] sm:text-[21px] leading-[1.6] text-black font-sans">
                   {language === 'EN'
-                    ? (englishSummary || article.summaryEnglish || "Summarizing...")
-                    : (filipinoSummary || (isStreamingFilipino ? "Isinasalin..." : "Pasensya na, wala pang available na pagsasalin."))}
+                    ? (englishSummary || article.summaryEnglish || (error ? `Error: ${error}` : "Summarizing..."))
+                    : (filipinoSummary || (isStreamingFilipino ? "Isinasalin..." : (error ? `Error: ${error}` : "Pasensya na, wala pang available na pagsasalin.")))}
                 </p>
                 {language === 'TL' && isStreamingFilipino && !filipinoSummary && (
                   <div className="flex gap-1.5 mt-4">
