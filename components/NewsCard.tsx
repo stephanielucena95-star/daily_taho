@@ -81,7 +81,7 @@ export const NewsCard: React.FC<NewsCardProps> = ({ article, isHero = false, ind
               e.stopPropagation();
               onSummaryClick(article);
             }}
-            className="flex items-center gap-1.5 px-6 py-2 bg-gray-50 hover:bg-gray-100 rounded-full text-[10px] font-bold uppercase tracking-widest text-gray-600 transition-all group-hover:text-black"
+            className="group flex items-center gap-1.5 px-6 py-2 bg-black hover:bg-gray-800 rounded-full text-[10px] font-bold uppercase tracking-widest text-white transition-all shadow-md active:scale-95"
           >
             Read Summary
             <ChevronRightIcon className="w-4 h-4 stroke-[3]" />

@@ -5,7 +5,6 @@ export const RSS_FEEDS = {
   GMA: 'https://data.gmanetwork.com/gno/rss/news/feed.xml',
   INQUIRER: 'https://newsinfo.inquirer.net/feed',
   PHILSTAR: 'https://www.philstar.com/rss/headlines',
-  MB: 'https://mb.com.ph/feed',
   RAPPLER: 'https://www.rappler.com/feed/',
   NEWS5: 'https://www.interaksyon.com/feed/',
   'MANILA TIMES': 'https://www.manilatimes.net/news/feed',

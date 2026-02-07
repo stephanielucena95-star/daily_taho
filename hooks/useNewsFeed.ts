@@ -165,7 +165,9 @@ export const useNewsFeed = (category: NewsCategory): UseNewsFeedResult => {
         try {
             const fetchPromises = Object.entries(RSS_FEEDS).map(async ([name, url]) => {
                 try {
-                    const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}`);
+                    // Added cache buster to bypass rss2json caching
+                    const cacheBuster = `&_cb=${Date.now()}`;
+                    const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}${cacheBuster}`);
                     const json = await res.json();
                     if (json.status === 'ok') {
                         return json.items.map((i: any) => ({
@@ -194,6 +196,8 @@ export const useNewsFeed = (category: NewsCategory): UseNewsFeedResult => {
                     const textLength = (item.description || "").replace(/<[^>]*>?/gm, '').length;
                     return textLength > 20;
                 })
+                .sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
+
             // Diversity-First Sorting: Group by source, take newest from each, then sort overall
             const groupedBySource: Record<string, Article[]> = {};
             validated.forEach(item => {
@@ -206,6 +210,10 @@ export const useNewsFeed = (category: NewsCategory): UseNewsFeedResult => {
             const sources = Object.keys(groupedBySource);
             let depth = 0;
             while (diverseSelection.length < 30 && depth < 10) {
+                // To keep diversity but prioritize NEWNESS:
+                // We pick the newest available from each source in rounds.
+                // Since sources are already sorted internally (because 'validated' was sorted),
+                // groupedBySource[s][depth] is the depth-th newest article from source s.
                 sources.forEach(s => {
                     if (groupedBySource[s][depth]) {
                         diverseSelection.push(groupedBySource[s][depth]);
@@ -213,6 +221,11 @@ export const useNewsFeed = (category: NewsCategory): UseNewsFeedResult => {
                 });
                 depth++;
             }
+
+            // FINAL STEP: Sort the final selection by date again to ensure global recency
+            // but we've already achieved a good mix. Actually, sorting the final selection
+            // is better for the user who wants "What's Newest".
+            diverseSelection.sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
 
 
             const topArticles = diverseSelection.slice(0, 10); // Still take top 10 for initial display

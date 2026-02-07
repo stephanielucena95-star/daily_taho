@@ -4,7 +4,11 @@ const feeds = {
     INQUIRER: 'https://newsinfo.inquirer.net/feed',
     PHILSTAR: 'https://www.philstar.com/rss/headlines',
     MB: 'https://mb.com.ph/feed',
-    RAPPLER: 'https://www.rappler.com/feed/'
+    RAPPLER: 'https://www.rappler.com/feed/',
+    NEWS5: 'https://www.interaksyon.com/feed/',
+    'MANILA TIMES': 'https://www.manilatimes.net/news/feed',
+    'DAILY TRIBUNE': 'https://tribune.net.ph/feed/',
+    'BUSINESSWORLD': 'https://www.bworldonline.com/feed/'
 };
 
 async function testFeeds() {
@@ -19,6 +23,7 @@ async function testFeeds() {
                 console.log(`✅ Success: Found ${json.items.length} items`);
                 const first = json.items[0];
                 console.log(`   Sample: "${first.title}"`);
+                console.log(`   Date: ${first.pubDate}`);
             } else {
                 console.log(`❌ Failed: ${json.message}`);
             }
