@@ -23,8 +23,9 @@ export interface Article {
   publishTime: string; // e.g., "2 hours ago"
   readTime: string; // e.g., "5 min read"
   imageUrl: string;
-  summaryEnglish: string; 
-  summaryFilipino?: string; 
+  summaryShort?: string;
+  summaryEnglish: string;
+  summaryFilipino?: string;
   tags?: string[];
   url: string;
 }

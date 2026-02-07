@@ -1,9 +1,9 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Article, NewsCategory } from '../types';
-import { RSS_FEEDS, PUBLISHER_HOME_PAGES, MOCK_ARTICLES, CATEGORY_KEYWORDS } from '../constants';
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { RSS_FEEDS, PUBLISHER_HOME_PAGES, MOCK_ARTICLES, WEIGHTED_KEYWORDS } from '../constants';
 
-const STORAGE_KEY = 'daily_taho_v17_cache';
+
+const STORAGE_KEY = 'daily_taho_v21_cache';
 const CACHE_DURATION = 15 * 60 * 1000;
 
 const verifyAndFixLink = (link: string, sourceName: string): string => {
@@ -11,6 +11,49 @@ const verifyAndFixLink = (link: string, sourceName: string): string => {
         return PUBLISHER_HOME_PAGES[sourceName] || 'https://www.google.com';
     }
     return link;
+};
+
+const extractImageUrl = (html: string): string => {
+    if (!html) return '';
+
+    let imageUrl = '';
+
+    // 1. og:image fallback
+    const ogMatch = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) ||
+        html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
+    if (ogMatch && ogMatch[1]) imageUrl = ogMatch[1];
+
+    // 2. facebook:image:src fallback
+    if (!imageUrl) {
+        const fbMatch = html.match(/<meta[^>]+name=["']facebook:image:src["'][^>]+content=["']([^"']+)["']/i) ||
+            html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']facebook:image:src["']/i);
+        if (fbMatch && fbMatch[1]) imageUrl = fbMatch[1];
+    }
+
+    // 3. First <img> tag inside <article> or .main-content (SIMULATED by searching the HTML)
+    // We look for any img tag as a final fallback since we are working with raw RSS HTML
+    if (!imageUrl) {
+        const imgMatch = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+        if (imgMatch && imgMatch[1]) imageUrl = imgMatch[1];
+    }
+
+    if (imageUrl) {
+        // Automatic https: prefixing for protocol-relative URLs
+        if (imageUrl.startsWith('//')) {
+            imageUrl = `https:${imageUrl}`;
+        }
+
+        // Filter out known trackers/icons
+        if (imageUrl.includes('feedburner') || imageUrl.includes('doubleclick')) {
+            console.log(`❌ Discarded tracker image: ${imageUrl}`);
+            return '';
+        }
+
+        console.log(`✅ Extracted Image URL: ${imageUrl}`);
+        return imageUrl;
+    }
+
+    return '';
 };
 
 const isPathConsistent = (title: string, link: string): boolean => {
@@ -24,14 +67,59 @@ const isPathConsistent = (title: string, link: string): boolean => {
     return true;
 };
 
-const matchesCategory = (item: any, category: NewsCategory): boolean => {
-    if (category === NewsCategory.ALL || category === NewsCategory.BREAKING) return true;
-
-    const keywords = CATEGORY_KEYWORDS[category] || [];
-    if (keywords.length === 0) return true; // Fallback
-
+/**
+ * Lead Engineer Note: Implementing Weighted Scoring System
+ * Rules:
+ * 1. Nagbabagang Balita (10), Pulitika (8), Teknolohiya (7), Showbiz (5)
+ * 2. Default: Nagbabagang Balita
+ * 3. Tie-breaker: Nagbabagang Balita
+ * 4. Whole-word matching via Regex
+ */
+const getWeightedCategory = (item: any): NewsCategory => {
     const text = `${item.title} ${item.description || ''}`.toLowerCase();
-    return keywords.some(keyword => text.includes(keyword.toLowerCase()));
+    const scores: Record<string, number> = {};
+
+    // Initialize scores for all potential categories
+    Object.keys(WEIGHTED_KEYWORDS).forEach(cat => {
+        scores[cat] = 0;
+    });
+
+    // Calculate scores
+    Object.entries(WEIGHTED_KEYWORDS).forEach(([category, data]) => {
+        data.keywords.forEach(keyword => {
+            // Whole-word matching using word boundaries
+            const regex = new RegExp(`\\b${keyword.toLowerCase()}\\b`, 'i');
+            if (regex.test(text)) {
+                scores[category] += data.weight;
+            }
+        });
+    });
+
+    // Extract categories that actually had matches
+    const candidates = Object.entries(scores).filter(([_, score]) => score > 0);
+
+    // Rule: Default to Nagbabagang Balita if no matches
+    if (candidates.length === 0) return NewsCategory.BREAKING;
+
+    // Rule: Sort by score (descending), apply Nagbabagang Balita tie-breaker
+    candidates.sort((a, b) => {
+        if (b[1] !== a[1]) return b[1] - a[1];
+        // If scores are equal, Breaking News (Nagbabagang Balita) always wins
+        if (a[0] === NewsCategory.BREAKING) return -1;
+        if (b[0] === NewsCategory.BREAKING) return 1;
+        return 0;
+    });
+
+    return candidates[0][0] as NewsCategory;
+};
+
+const matchesCategory = (item: any, category: NewsCategory): boolean => {
+    if (category === NewsCategory.ALL) return true;
+
+    // For individual category views, we check if the article's "Best Fit" matches
+    const primary = getWeightedCategory(item);
+
+    return primary === category;
 };
 
 const formatDisplayDate = (dateStr: string): string => {
@@ -85,11 +173,14 @@ export const useNewsFeed = (category: NewsCategory): UseNewsFeedResult => {
                             link: verifyAndFixLink(i.link, name),
                             pubDate: i.pubDate,
                             sourceName: name,
-                            // Store raw description for progressive loading
-                            description: i.description || ''
+                            // Content-First Layer: Use full 'content' first, fallback to description
+                            description: i.content || i.description || '',
+                            imageUrl: i.enclosure?.link || i.thumbnail || extractImageUrl(i.content || i.description || '')
                         }));
                     }
-                } catch (e) { console.error(e); }
+                } catch (e) {
+                    console.error(`Fetch failed for ${name}:`, e);
+                }
                 return [];
             });
 
@@ -98,136 +189,68 @@ export const useNewsFeed = (category: NewsCategory): UseNewsFeedResult => {
 
             const validated = aggregatedRaw
                 .filter(item => isPathConsistent(item.title, item.link))
-                .filter(item => matchesCategory(item, category)) // CATEGORY FILTER APPLIED HERE
-                .sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
+                .filter(item => matchesCategory(item, category))
+                .filter(item => {
+                    const textLength = (item.description || "").replace(/<[^>]*>?/gm, '').length;
+                    return textLength > 20;
+                })
+            // Diversity-First Sorting: Group by source, take newest from each, then sort overall
+            const groupedBySource: Record<string, Article[]> = {};
+            validated.forEach(item => {
+                const s = item.sourceName;
+                if (!groupedBySource[s]) groupedBySource[s] = [];
+                groupedBySource[s].push(item);
+            });
 
-            if (validated.length === 0) {
-                // If specific category yields zero, maybe just show filtered 'ALL' but that defeats the purpose.
-                // For now, let it be empty or maybe don't throw error if just empty category.
-                if (category === NewsCategory.ALL) throw new Error("No data");
+            const diverseSelection: any[] = [];
+            const sources = Object.keys(groupedBySource);
+            let depth = 0;
+            while (diverseSelection.length < 30 && depth < 10) {
+                sources.forEach(s => {
+                    if (groupedBySource[s][depth]) {
+                        diverseSelection.push(groupedBySource[s][depth]);
+                    }
+                });
+                depth++;
             }
 
-            // PROGRESSIVE LOADING STEP 1: Show Raw Articles (Immediate)
-            const rawArticles: Article[] = validated.map((item, idx) => {
-                // Clean up HTML from description if possible, or just use it.
-                // Increased limit to 500chars to avoid cutting off English summaries prematurely
-                const cleanSummary = item.description.replace(/<[^>]*>?/gm, '').substring(0, 500) + '...';
 
+            const topArticles = diverseSelection.slice(0, 10); // Still take top 10 for initial display
+
+            // Initialize articles with raw data first so user sees SOMETHING
+            const initialDisplayArticles: Article[] = topArticles.map((item, idx) => {
+                const cleanText = item.description.replace(/<[^>]*>?/gm, '').trim();
+                let initialShort = cleanText;
+                const sentences = cleanText.match(/[^.!?]+[.!?]+/g);
+                if (sentences && sentences.length >= 2) {
+                    initialShort = sentences.slice(0, 2).join(' ');
+                }
                 return {
                     id: `rss-${Date.now()}-${idx}`,
                     title: item.title,
                     source: { name: item.sourceName },
-                    category: category,
+                    category: getWeightedCategory(item),
                     publishTime: formatDisplayDate(item.pubDate),
-                    readTime: 'Reading...',
-                    imageUrl: '',
-                    summaryEnglish: cleanSummary,
-                    summaryFilipino: 'Isinasalin...', // Indication it's waiting for AI
+                    readTime: '2 min read',
+                    imageUrl: item.imageUrl || '',
+                    summaryShort: initialShort,
+                    summaryEnglish: cleanText, // Raw description as fallback
+                    summaryFilipino: '',
                     url: item.link
                 };
             });
 
-            setArticles(rawArticles);
-            setLoadingState('summarizing');
+            setArticles(initialDisplayArticles);
 
-            // AI Summarization
-            const apiKey = import.meta.env.VITE_API_KEY || process.env.API_KEY;
-
-            if (!apiKey || apiKey === 'PLACEHOLDER_API_KEY') {
-                console.warn("Missing API_KEY. Falling back to mock data.");
-                // We keep raw articles but stop loading
-                setLoadingState('ready');
-                return;
-            }
-
-            const genAI = new GoogleGenerativeAI(apiKey);
-            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-            // Helper to process a batch of articles
-            const processBatch = async (itemsToProcess: any[], startIndex: number) => {
-                if (itemsToProcess.length === 0) return [];
-
-                const prompt = `Task: Summarize these Philippine news headlines. 
-        Return ONLY a JSON array of objects with keys: title, source, summary_en, summary_tl, url, date. 
-        Rules:
-        1. "summary_en": English summary, MUST be 3-5 complete sentences. Do NOT truncate sentences.
-        2. "summary_tl": Tagalog summary, MUST be 3-5 complete sentences. Do NOT truncate sentences.
-        3. Ensure summaries capture the main point of the news.
-        Data: ${JSON.stringify(itemsToProcess)}`;
-
-                try {
-                    const result = await model.generateContent(prompt);
-                    const response = await result.response;
-                    const text = response.text();
-                    const jsonMatch = text.match(/\[[\s\S]*\]/);
-
-                    if (jsonMatch) {
-                        const items = JSON.parse(jsonMatch[0]);
-                        return items.map((item: any, i: number) => ({
-                            id: `rss-${Date.now()}-${startIndex + i}`,
-                            title: item.title,
-                            source: { name: item.source },
-                            category: category,
-                            publishTime: formatDisplayDate(item.date || itemsToProcess[i]?.pubDate),
-                            readTime: '4 min read',
-                            imageUrl: '',
-                            summaryEnglish: item.summary_en,
-                            summaryFilipino: item.summary_tl,
-                            url: item.url
-                        }));
-                    }
-                } catch (e) {
-                    console.error("Batch processing failed", e);
-                }
-                return [];
-            };
-
-            // CHUNKING: Split into Priority (Top 3) and Background (Rest)
-            // Limit total to 10 like before
-            const LIMIT = 10;
-            const prioritySlice = validated.slice(0, 3);
-            const backgroundSlice = validated.slice(3, LIMIT);
-
-            // 1. Process Priority Batch
-            const priorityArticles = await processBatch(prioritySlice, 0);
-
-            if (priorityArticles.length > 0) {
-                // Merge priority results with raw background articles
-                const mergedState = [
-                    ...priorityArticles,
-                    ...rawArticles.slice(3, LIMIT) // Show raw for the rest while they load
-                ];
-                // Only update if we are still fetching for the same category? 
-                // Ideally we should track request ID but for now simple state set is fine.
-                setArticles(mergedState);
-            }
-
-            // 2. Process Background Batch
-            if (backgroundSlice.length > 0) {
-                const backgroundArticles = await processBatch(backgroundSlice, 3);
-
-                if (backgroundArticles.length > 0) {
-                    // Final state with all AI summaries
-                    const finalState = [...priorityArticles, ...backgroundArticles];
-                    setArticles(finalState);
-
-                    // Update Cache
-                    const nextCache = { ...newsCache, [category]: { data: finalState, timestamp: Date.now() } };
-                    setNewsCache(nextCache);
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify(nextCache));
-                }
-            } else if (priorityArticles.length > 0) {
-                // Case where fewer than 3 articles existed
-                const finalState = [...priorityArticles];
-                const nextCache = { ...newsCache, [category]: { data: finalState, timestamp: Date.now() } };
-                setNewsCache(nextCache);
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(nextCache));
-            }
+            // Initial cache
+            const nextCache = { ...newsCache, [category]: { data: initialDisplayArticles, timestamp: Date.now() } };
+            setNewsCache(nextCache);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(nextCache));
 
             setLoadingState('ready');
 
         } catch (err) {
-            console.error("Aggregation failed", err);
+            console.error("Critical Aggregation Error:", err);
             setFetchError(true);
             setLoadingState('error');
         }
@@ -240,4 +263,3 @@ export const useNewsFeed = (category: NewsCategory): UseNewsFeedResult => {
 
     return { articles, loadingState, refreshNews, fetchError };
 };
-

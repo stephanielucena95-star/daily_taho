@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 interface HeaderProps {
@@ -8,27 +7,22 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ isDataSaver, onToggleDataSaver }) => {
   return (
-    <header className="sticky top-0 z-50 bg-white border-b-2 border-gray-900 shadow-sm">
-      <div className="max-w-md mx-auto px-4 py-2 flex items-center justify-between">
-        <div className="flex flex-col items-center -space-y-1">
-          <span className="text-[9px] font-bold tracking-[0.2em] uppercase text-gray-400 font-sans">Daily</span>
-          <h1 className="font-serif font-black text-2xl tracking-tighter text-gray-900 italic transform -skew-x-6">
+    <header className="bg-white border-b border-gray-100 transition-all duration-500">
+      <div className="max-w-md mx-auto px-6 py-6 flex flex-col items-center relative">
+        <div className="flex flex-col items-center">
+          <span className="text-[10px] font-bold tracking-[0.3em] uppercase text-gray-400 mb-1">Daily</span>
+          <h1 className="font-serif-display font-black text-4xl tracking-tight text-black italic">
             TAHO
           </h1>
         </div>
 
-        <div className="flex items-center gap-2">
-           <div 
+        <div className="absolute right-6 top-1/2 -translate-y-1/2">
+          <button
             onClick={() => onToggleDataSaver(!isDataSaver)}
-            className="flex items-center gap-2 cursor-pointer group"
+            className={`w-10 h-6 rounded-full p-1 transition-colors duration-300 ${isDataSaver ? 'bg-black' : 'bg-gray-200'}`}
           >
-            <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 group-hover:text-gray-900 transition-colors">
-              Data Saver
-            </span>
-            <div className={`w-8 h-4 rounded-full p-0.5 transition-colors ${isDataSaver ? 'bg-green-500' : 'bg-gray-200'}`}>
-              <div className={`w-3 h-3 bg-white rounded-full shadow-sm transform transition-transform ${isDataSaver ? 'translate-x-4' : 'translate-x-0'}`}></div>
-            </div>
-          </div>
+            <div className={`w-4 h-4 bg-white rounded-full shadow-sm transform transition-transform duration-300 ${isDataSaver ? 'translate-x-4' : 'translate-x-0'}`}></div>
+          </button>
         </div>
       </div>
     </header>

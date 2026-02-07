@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    --taho-soy: #ffffff;
+    --taho-syrup: #18181b;
+    --taho-sago: #000000;
+    --taho-accent: #f4f4f5;
+    --font-serif: "Playfair Display", serif;
+    --font-sans: "Inter", sans-serif;
+}
+
+@layer base {
+    html {
+        -webkit-tap-highlight-color: transparent;
+        scroll-behavior: smooth;
+    }
+
+    body {
+        @apply bg-white text-[#18181b] antialiased selection:bg-[#18181b] selection:text-white;
+        font-family: var(--font-sans);
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    .font-serif-display {
+        font-family: var(--font-serif);
+    }
+}
+
+@layer components {
+    .glass {
+        @apply bg-white/70 backdrop-blur-md border border-white/20;
+    }
+
+    .premium-card {
+        @apply bg-white rounded-2xl shadow-[0_4px_20px_rgba(0, 0, 0, 0.03)] border border-[#efebe9] transition-all duration-300;
+    }
+
+    .premium-card:hover {
+        @apply shadow-[0_12px_40px_rgba(109, 76, 65, 0.08)] border-[#d7ccc8];
+    }
+}
+
+.animate-fade-in-up {
+    animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #d1ccca;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #6d4c41;
+}

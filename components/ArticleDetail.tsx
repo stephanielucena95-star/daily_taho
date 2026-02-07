@@ -1,10 +1,9 @@
-
 import React, { useState } from 'react';
 import { Article, NewsCategory } from '../types';
-import { 
-  ChevronLeftIcon, 
-  GlobeAltIcon, 
-  ArrowTopRightOnSquareIcon, 
+import {
+  ChevronLeftIcon,
+  GlobeAltIcon,
+  ArrowTopRightOnSquareIcon,
   MagnifyingGlassIcon,
   BuildingLibraryIcon,
   CurrencyDollarIcon,
@@ -12,9 +11,11 @@ import {
   FilmIcon,
   CpuChipIcon,
   GlobeAsiaAustraliaIcon,
-  NewspaperIcon
+  NewspaperIcon,
+  ShareIcon
 } from '@heroicons/react/24/outline';
 import { CATEGORY_THEME } from '../constants';
+import { useStreamingSummary } from '../hooks/useStreamingSummary';
 
 interface ArticleDetailProps {
   article: Article;
@@ -43,161 +44,174 @@ const CategoryHeroIcon = ({ category, className }: { category: NewsCategory, cla
 
 export const ArticleDetail: React.FC<ArticleDetailProps> = ({ article, onBack }) => {
   const [language, setLanguage] = useState<'EN' | 'TL'>('EN');
-  const [imageError, setImageError] = useState(false);
-  const theme = CATEGORY_THEME[article.category] || CATEGORY_THEME.Lahat;
+  const theme = CATEGORY_THEME[article.category] || CATEGORY_THEME[NewsCategory.ALL];
+
+  const {
+    englishSummary,
+    filipinoSummary,
+    isStreamingEnglish,
+    isStreamingFilipino,
+    startSummarizing
+  } = useStreamingSummary();
+
+  // Trigger summary on mount
+  React.useEffect(() => {
+    startSummarizing(article);
+  }, [article, startSummarizing]);
 
   // Fallback search URL if the direct link fails
   const fallbackSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(article.title + " " + article.source.name)}`;
 
-  const hasValidImage = !!article.imageUrl && article.imageUrl.trim() !== '' && !imageError;
-
   return (
-    <div className="bg-off-white min-h-screen flex flex-col animate-fade-in-up">
+    <div className="bg-white min-h-screen flex flex-col antialiased">
       {/* Sticky Header */}
-      <div className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm px-4 py-3 flex items-center justify-between">
-        <button 
+      <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 px-4 py-4 flex items-center justify-between shadow-sm">
+        <button
           onClick={onBack}
-          className="flex items-center text-gray-700 hover:text-gray-900 transition-colors"
+          className="flex items-center text-black hover:bg-gray-50 transition-all group px-3 py-1.5 rounded-full"
         >
-          <ChevronLeftIcon className="w-6 h-6 mr-1" />
-          <span className="text-sm font-bold uppercase tracking-wide">Bumalik</span>
+          <ChevronLeftIcon className="w-5 h-5 mr-1.5 stroke-[3] transition-transform group-hover:-translate-x-1" />
+          <span className="text-[11px] font-bold uppercase tracking-widest">Bumalik</span>
         </button>
 
         {/* Language Toggle */}
-        <div className="flex bg-gray-100 rounded-lg p-1 border border-gray-200">
+        <div className="flex bg-gray-50 rounded-full p-1 border border-gray-100">
           <button
             onClick={() => setLanguage('EN')}
-            className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${
-              language === 'EN' 
-                ? 'bg-white text-gray-900 shadow-sm' 
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
+            className={`px-5 py-2 text-[10px] font-bold rounded-full transition-all ${language === 'EN'
+              ? 'bg-black text-white shadow-md'
+              : 'text-gray-500 hover:text-black'
+              }`}
           >
-            ENG
+            ENGLISH
           </button>
           <button
             onClick={() => setLanguage('TL')}
-            className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${
-              language === 'TL' 
-                ? 'bg-white text-gray-900 shadow-sm' 
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
+            className={`px-5 py-2 text-[10px] font-bold rounded-full transition-all flex items-center gap-2 ${language === 'TL'
+              ? 'bg-black text-white shadow-md'
+              : 'text-gray-500 hover:text-black'
+              }`}
           >
-            FIL
+            FILIPINO
+            {isStreamingFilipino && !filipinoSummary && (
+              <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></div>
+            )}
           </button>
         </div>
+
+        <button
+          onClick={() => {
+            if (navigator.share) {
+              navigator.share({ title: article.title, url: article.url });
+            } else {
+              navigator.clipboard.writeText(article.url);
+              alert("Link copied!");
+            }
+          }}
+          className="p-2.5 text-gray-400 hover:text-black hover:bg-gray-50 rounded-full transition-all"
+        >
+          <ShareIcon className="w-5 h-5 stroke-[2]" />
+        </button>
       </div>
 
-      <div className="max-w-md mx-auto w-full flex-grow flex flex-col">
-        {/* Article Content */}
-        <div className="bg-white flex-grow flex flex-col shadow-sm">
-           {/* Hero Image or Category Placeholder */}
-           {hasValidImage ? (
-              <div className="w-full h-64 relative">
-                <img 
-                  src={article.imageUrl} 
-                  alt={article.title}
-                  className="w-full h-full object-cover"
-                  onError={() => setImageError(true)}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none"></div>
-              </div>
-            ) : (
-              // Category Placeholder Header
-              <div 
-                className="w-full h-64 flex flex-col items-center justify-center relative overflow-hidden" 
-                style={{ backgroundColor: theme.bg }}
-              >
-                 <div className="opacity-10 absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
-                 <CategoryHeroIcon 
-                    category={article.category} 
-                    className="w-24 h-24 text-white opacity-40 mb-2 relative z-10" 
-                 />
-                 <span className="text-white font-black opacity-60 text-xl uppercase tracking-[0.2em] relative z-10">
-                   {article.category}
-                 </span>
-              </div>
-            )}
-
-          <div className="p-6 flex-grow flex flex-col">
-            {/* Metadata */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 font-serif font-bold">
-                  {article.source.name.substring(0, 1)}
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-sm font-bold text-gray-900">{article.source.name}</span>
-                  <span className="text-xs text-gray-500">{article.publishTime}</span>
-                </div>
-              </div>
-                <span className="text-[10px] font-bold uppercase px-2 py-1 bg-gray-100 rounded text-gray-600">
-                  {article.category}
-                </span>
+      <div className="max-w-xl mx-auto w-full flex-grow flex flex-col bg-white">
+        <div className="flex-grow flex flex-col pt-12 pb-20">
+          <div className="px-10 pb-8 flex items-center justify-between">
+            <span className="px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider text-white"
+              style={{ backgroundColor: theme.bg }}>
+              {article.category}
+            </span>
+            <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100">
+              <div className={`w-1.5 h-1.5 rounded-full ${isStreamingEnglish || isStreamingFilipino ? 'bg-amber-500 animate-pulse' : 'bg-green-500'}`}></div>
+              <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">
+                {isStreamingEnglish || isStreamingFilipino ? 'AI Streaming...' : 'Refreshed'}
+              </span>
             </div>
+          </div>
 
+          <div className="px-10 flex-grow flex flex-col">
             {/* Headline */}
-            <h1 className="font-serif font-black text-2xl sm:text-3xl leading-tight text-gray-900 mb-6">
+            <h1 className="font-serif-display font-black text-[32px] sm:text-[44px] leading-[1.05] text-black mb-10 tracking-tight">
               {article.title}
             </h1>
 
-            {/* AI Summary Block */}
-            <div className="bg-gray-50 rounded-xl p-5 border border-gray-100 mb-8 relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-1.5 h-full" style={{ backgroundColor: theme.bg }}></div>
-              <div className="flex items-center gap-2 mb-3 text-gray-500">
-                <GlobeAltIcon className="w-4 h-4" />
-                <span className="text-xs font-bold uppercase tracking-widest">
-                  AI Summary ({language === 'EN' ? 'English' : 'Filipino'})
-                </span>
+            {/* Metadata */}
+            <div className="flex items-center gap-4 mb-10 pb-10 border-b border-gray-50">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-black text-lg shadow-sm" style={{ backgroundColor: theme.bg }}>
+                {article.source.name.substring(0, 1)}
               </div>
-              
-              <p className="text-base sm:text-lg leading-relaxed text-gray-800 font-sans">
-                {language === 'EN' 
-                  ? article.summaryEnglish 
-                  : (article.summaryFilipino || "Pasensya na, walang available na pagsasalin para sa balitang ito.")}
-              </p>
+              <div className="flex flex-col">
+                <span className="text-xs font-bold text-black uppercase tracking-widest mb-1">{article.source.name}</span>
+                <div className="flex items-center gap-2 text-[11px] text-gray-400 font-bold uppercase tracking-widest">
+                  <span>{article.publishTime}</span>
+                  <span>•</span>
+                  <span>{article.readTime}</span>
+                </div>
+              </div>
             </div>
 
-            {/* Tags */}
-            {article.tags && article.tags.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-8">
-                {article.tags.map((tag, idx) => (
-                  <span 
-                    key={idx} 
-                    className="text-xs font-medium px-3 py-1.5 rounded-full bg-gray-100 text-gray-600"
-                  >
-                    #{tag}
+            {/* AI Summary Block */}
+            <div className="bg-gray-50/50 rounded-[24px] p-8 sm:p-10 border border-gray-100 mb-12 relative overflow-hidden">
+              <div className="h-1 w-full absolute top-0 left-0" style={{ backgroundColor: theme.bg }}></div>
+
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-2.5 text-black">
+                  <div className="p-1.5 bg-white rounded border border-gray-100 shadow-sm">
+                    <GlobeAltIcon className="w-4 h-4" />
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em]">
+                    {language === 'EN' ? 'AI Summary' : 'Buod ng AI'}
                   </span>
-                ))}
+                </div>
               </div>
-            )}
+
+              <div className="space-y-6">
+                <p className="text-[18px] sm:text-[21px] leading-[1.6] text-black font-sans">
+                  {language === 'EN'
+                    ? (englishSummary || article.summaryEnglish || "Summarizing...")
+                    : (filipinoSummary || (isStreamingFilipino ? "Isinasalin..." : "Pasensya na, wala pang available na pagsasalin."))}
+                </p>
+                {language === 'TL' && isStreamingFilipino && !filipinoSummary && (
+                  <div className="flex gap-1.5 mt-4">
+                    <div className="w-1.5 h-1.5 rounded-full bg-black/10 animate-bounce"></div>
+                    <div className="w-1.5 h-1.5 rounded-full bg-black/10 animate-bounce [animation-delay:0.2s]"></div>
+                    <div className="w-1.5 h-1.5 rounded-full bg-black/10 animate-bounce [animation-delay:0.4s]"></div>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-10 pt-6 border-t border-gray-100 flex items-center justify-between">
+                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Verified Contextual Insight</span>
+                <div className="text-[10px] font-bold text-black opacity-30 italic">
+                  Daily Taho
+                </div>
+              </div>
+            </div>
 
             {/* Link Out / Footer */}
-            <div className="mt-auto pt-8 border-t border-gray-100 flex flex-col items-center text-center space-y-4">
-              <div className="w-full">
-                <p className="text-sm text-gray-500 mb-2 font-medium">Basahin ang buong kwento</p>
-                <a 
-                  href={article.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 w-full bg-gray-900 text-white font-bold py-3 px-4 rounded-lg shadow-sm hover:bg-gray-800 transition-all active:scale-[0.98]"
+            <div className="mt-auto flex flex-col items-center">
+              <div className="w-full max-w-sm">
+                <button
+                  onClick={() => window.open(article.url, '_blank')}
+                  className="flex items-center justify-center gap-4 w-full bg-black text-white font-bold py-5 px-8 rounded-full shadow-lg hover:bg-gray-800 transition-all active:scale-[0.98] group"
                 >
-                  <span>Basahin sa {article.source.name}</span>
-                  <ArrowTopRightOnSquareIcon className="w-4 h-4" />
-                </a>
+                  <span className="text-[11px] uppercase tracking-widest">Full Story on {article.source.name}</span>
+                  <ArrowTopRightOnSquareIcon className="w-4 h-4 stroke-[3] group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                </button>
               </div>
 
-              <div className="text-xs text-gray-400">
-                <span>Hindi gumagana ang link? </span>
-                <a 
-                  href={fallbackSearchUrl} 
-                  target="_blank" 
+              <div className="mt-8 text-[11px] text-gray-400 font-bold uppercase tracking-widest flex items-center gap-4">
+                <a
+                  href={fallbackSearchUrl}
+                  target="_blank"
                   rel="noopener noreferrer"
-                  className="text-blue-600 hover:text-blue-800 hover:underline font-medium inline-flex items-center gap-0.5"
+                  className="text-gray-500 hover:text-black flex items-center gap-1.5 transition-colors"
                 >
-                  <MagnifyingGlassIcon className="w-3 h-3" />
-                  I-search sa Google
+                  <MagnifyingGlassIcon className="w-4 h-4 stroke-[3]" />
+                  Verify on Google
                 </a>
+                <span className="opacity-20">|</span>
+                <span className="cursor-pointer hover:text-black">Report Issue</span>
               </div>
             </div>
           </div>

@@ -2,11 +2,15 @@
 import { Article, NewsCategory } from './types';
 
 export const RSS_FEEDS = {
-  GMA: 'https://www.gmanetwork.com/news/rss/',
+  GMA: 'https://data.gmanetwork.com/gno/rss/news/feed.xml',
   INQUIRER: 'https://newsinfo.inquirer.net/feed',
   PHILSTAR: 'https://www.philstar.com/rss/headlines',
   MB: 'https://mb.com.ph/feed',
-  RAPPLER: 'https://www.rappler.com/feed/'
+  RAPPLER: 'https://www.rappler.com/feed/',
+  NEWS5: 'https://www.interaksyon.com/feed/',
+  'MANILA TIMES': 'https://www.manilatimes.net/news/feed',
+  'DAILY TRIBUNE': 'https://tribune.net.ph/feed/',
+  'BUSINESSWORLD': 'https://www.bworldonline.com/feed/'
 };
 
 export const PUBLISHER_HOME_PAGES: Record<string, string> = {
@@ -16,18 +20,22 @@ export const PUBLISHER_HOME_PAGES: Record<string, string> = {
   'Manila Bulletin': 'https://mb.com.ph',
   'Rappler': 'https://www.rappler.com',
   'GMA': 'https://www.gmanetwork.com/news/',
-  'Philstar.com': 'https://www.philstar.com'
+  'Philstar.com': 'https://www.philstar.com',
+  'NEWS5': 'https://www.interaksyon.com',
+  'MANILA TIMES': 'https://www.manilatimes.net',
+  'DAILY TRIBUNE': 'https://tribune.net.ph',
+  'BUSINESSWORLD': 'https://www.bworldonline.com'
 };
 
 export const CATEGORY_THEME: Record<NewsCategory, { bg: string; text: string }> = {
-  [NewsCategory.ALL]: { bg: '#1f2937', text: '#ffffff' },
-  [NewsCategory.BREAKING]: { bg: '#fb3640', text: '#ffffff' },
-  [NewsCategory.POLITICS]: { bg: '#131316', text: '#ffffff' },
-  [NewsCategory.ECONOMY]: { bg: '#fecb34', text: '#131316' },
-  [NewsCategory.SPORTS]: { bg: '#2563eb', text: '#ffffff' },
-  [NewsCategory.ENTERTAINMENT]: { bg: '#58158e', text: '#ffffff' },
-  [NewsCategory.TEKNOLOHIYA]: { bg: '#0ea5e9', text: '#ffffff' },
-  [NewsCategory.GLOBAL]: { bg: '#131316', text: '#ffffff' },
+  [NewsCategory.ALL]: { bg: '#18181b', text: '#ffffff' }, // Black
+  [NewsCategory.BREAKING]: { bg: '#ef4444', text: '#ffffff' }, // Modern Red
+  [NewsCategory.POLITICS]: { bg: '#27272a', text: '#ffffff' }, // Dark Zinc
+  [NewsCategory.ECONOMY]: { bg: '#f59e0b', text: '#ffffff' }, // Amber
+  [NewsCategory.SPORTS]: { bg: '#10b981', text: '#ffffff' }, // Emerald
+  [NewsCategory.ENTERTAINMENT]: { bg: '#db2777', text: '#ffffff' }, // Rose
+  [NewsCategory.TEKNOLOHIYA]: { bg: '#6366f1', text: '#ffffff' }, // Indigo
+  [NewsCategory.GLOBAL]: { bg: '#52525b', text: '#ffffff' }, // Zinc
 };
 
 export const MOCK_ARTICLES: Article[] = [
@@ -56,13 +64,34 @@ export const CATEGORIES = [
   NewsCategory.GLOBAL,
 ];
 
-export const CATEGORY_KEYWORDS: Record<NewsCategory, string[]> = {
-  [NewsCategory.ALL]: [],
-  [NewsCategory.BREAKING]: [], // Usually handled by recency/source, but can add urgent keywords
-  [NewsCategory.POLITICS]: ['senate', 'congress', 'president', 'marcos', 'duterte', 'law', 'bill', 'batang q', 'government', 'halalan', 'election', 'court', 'pbbu', 'policy', 'official', 'department'],
-  [NewsCategory.ECONOMY]: ['inflation', 'price', 'market', 'stock', 'peso', 'dollar', 'dbm', 'dof', 'neda', 'bsp', 'tax', 'business', 'economy', 'trade', 'investment', 'presyo', 'ili', 'bank'],
-  [NewsCategory.SPORTS]: ['nba', 'pba', 'basketball', 'volleyball', 'boxing', 'mpl', 'ginebra', 'magnolia', 'san miguel', 'olympics', 'fiba', 'game', 'score', 'tournament', 'championship', 'athlete'],
-  [NewsCategory.ENTERTAINMENT]: ['showbiz', 'celebrity', 'movie', 'film', 'concert', 'actor', 'actress', 'star', 'drama', 'kapuso', 'kapamilya', 'gma', 'abs-cbn', 'entertainment', 'idol'],
-  [NewsCategory.TEKNOLOHIYA]: ['tech', 'gadget', 'phone', 'app', 'ai', 'cyber', 'internet', 'digital', 'software', 'hardware', 'science', 'space', 'innovation', 'robot', 'computer'],
-  [NewsCategory.GLOBAL]: ['us ', 'china', 'japan', 'ukraine', 'russia', 'gaza', 'israel', 'un', 'world', 'international', 'foreign', 'trump', 'biden', 'war', 'global'],
+// NEW: Weighted Scoring Taxonomy
+export const WEIGHTED_KEYWORDS: Record<string, { keywords: string[], weight: number }> = {
+  [NewsCategory.BREAKING]: {
+    weight: 10,
+    keywords: ['phivolcs', 'pagasa', 'lindol', 'earthquake', 'magnitude', 'bulkan', 'volcano', 'bagyo', 'storm', 'lpa', 'signal', 'alert', 'breaking', 'nagbabaga', 'flash', 'urgent']
+  },
+  [NewsCategory.GLOBAL]: {
+    weight: 9,
+    keywords: ['trump', 'biden', 'harris', 'putin', 'xi jinping', 'ukraine', 'israel', 'gaza', 'russia', 'china', 'usa', 'america', 'un', 'nato', 'international', 'world']
+  },
+  [NewsCategory.POLITICS]: {
+    weight: 8,
+    keywords: ['pbbm', 'marcos', 'senado', 'senate', 'kongreso', 'congress', 'vp', 'duterte', 'election', 'batas', 'law', 'bill', 'halalan', 'comelec', 'malacañang']
+  },
+  [NewsCategory.TEKNOLOHIYA]: {
+    weight: 7,
+    keywords: ['gadget', 'smartphone', 'ai', 'apps', 'internet', 'cybersecurity', 'startup', 'tech', 'software', 'hardware', 'innovation', 'robot', 'computer']
+  },
+  [NewsCategory.ENTERTAINMENT]: {
+    weight: 5,
+    keywords: ['actor', 'actress', 'celebrity', 'concert', 'pelikula', 'movie', 'k-pop', 'viral', 'trending', 'showbiz', 'star', 'drama', 'kapuso', 'kapamilya']
+  },
+  [NewsCategory.ECONOMY]: {
+    weight: 6,
+    keywords: ['inflation', 'price', 'market', 'stock', 'peso', 'dollar', 'dbm', 'dof', 'neda', 'bsp', 'tax', 'business']
+  },
+  [NewsCategory.SPORTS]: {
+    weight: 6,
+    keywords: ['nba', 'pba', 'basketball', 'volleyball', 'boxing', 'mpl', 'game', 'score', 'tournament', 'championship']
+  }
 };
