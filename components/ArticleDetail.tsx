@@ -167,7 +167,7 @@ export const ArticleDetail: React.FC<ArticleDetailProps> = ({ article, onBack })
               </div>
 
               <div className="space-y-6">
-                <p className="text-[18px] sm:text-[21px] leading-[1.6] text-black font-sans">
+                <p className="text-[18px] sm:text-[21px] leading-[1.6] text-black font-sans text-justify">
                   {language === 'EN'
                     ? (englishSummary || article.summaryEnglish || (error ? `Error: ${error}` : "Summarizing..."))
                     : (filipinoSummary || (isStreamingFilipino ? "Isinasalin..." : (error ? `Error: ${error}` : "Pasensya na, wala pang available na pagsasalin.")))}
@@ -192,13 +192,15 @@ export const ArticleDetail: React.FC<ArticleDetailProps> = ({ article, onBack })
             {/* Link Out / Footer */}
             <div className="mt-auto flex flex-col items-center">
               <div className="w-full max-w-sm">
-                <button
-                  onClick={() => window.open(article.url, '_blank')}
+                <a
+                  href={article.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="flex items-center justify-center gap-4 w-full bg-black text-white font-bold py-5 px-8 rounded-full shadow-lg hover:bg-gray-800 transition-all active:scale-[0.98] group"
                 >
                   <span className="text-[11px] uppercase tracking-widest">Full Story on {article.source.name}</span>
                   <ArrowTopRightOnSquareIcon className="w-4 h-4 stroke-[3] group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-                </button>
+                </a>
               </div>
 
               <div className="mt-8 text-[11px] text-gray-400 font-bold uppercase tracking-widest flex items-center gap-4">

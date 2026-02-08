@@ -7,7 +7,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ isDataSaver, onToggleDataSaver }) => {
   return (
-    <header className="bg-white border-b border-gray-100 transition-all duration-500">
+    <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-gray-100 transition-all duration-500 shadow-sm">
       <div className="max-w-md mx-auto px-6 py-6 flex flex-col items-center relative">
         <div className="flex flex-col items-center">
           <span className="text-[10px] font-bold tracking-[0.3em] uppercase text-gray-400 mb-1">Daily</span>
