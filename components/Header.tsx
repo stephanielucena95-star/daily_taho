@@ -11,7 +11,7 @@ export const Header: React.FC<HeaderProps> = ({ isDataSaver, onToggleDataSaver }
       <div className="max-w-md mx-auto px-6 py-4 flex flex-col items-center relative">
         <div className="flex flex-col items-center">
           <img
-            src="/logo.png"
+            src="/dt-black.png"
             alt="Daily Taho"
             className="h-10 w-auto object-contain"
           />
