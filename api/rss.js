@@ -2,15 +2,7 @@
 import RSS from 'rss';
 
 export const config = {
-    runtime: 'edge', // Or 'nodejs' check if 'rss' works in edge. 'rss' package might use node APIs. 
-    // Actually, 'rss' package is pure JS string manipulation usually, but let's check. 
-    // Safest to use 'nodejs' runtime if we are unsure, but user wants consistency.
-    // However, Vercel Edge functions have limited Node.js API support.
-    // 'rss' package might be fine. 
-    // Wait, 'rss' package uses 'xml' package which might be fine. 
-    // Let's stick to 'nodejs' to be safe since performance impact is minimal for this RSS feed and it guarantees compatibility.
-    // Actually, 'api/feed.js' used 'edge'. 
-    // Let's try 'edge' first, but I'll use standard fetch.
+    runtime: 'nodejs',
 };
 
 // Reusing constants and logic from api/feed.js
