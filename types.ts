@@ -18,6 +18,7 @@ export interface NewsSource {
 export interface Article {
   id: string;
   title: string;
+  slug?: string; // Optional for compatibility, but populated by updated API
   source: NewsSource;
   category: NewsCategory;
   publishTime: string; // e.g., "2 hours ago"

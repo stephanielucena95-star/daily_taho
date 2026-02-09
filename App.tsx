@@ -41,6 +41,29 @@ function App() {
     return [];
   }, [articles, loadingState, fetchError]);
 
+  // Deep linking: Check URL for ?article=slug and auto-select
+  useEffect(() => {
+    if (displayArticles.length === 0) return;
+    const params = new URLSearchParams(window.location.search);
+    const articleSlug = params.get('article');
+    if (articleSlug && !selectedArticle) {
+      const match = displayArticles.find(a => a.slug === articleSlug || a.id === articleSlug);
+      if (match) {
+        setSelectedArticle(match);
+      }
+    }
+  }, [displayArticles, selectedArticle]);
+
+  // Update URL when article is selected/deselected
+  const handleSelectArticle = (article: Article | null) => {
+    setSelectedArticle(article);
+    if (article && article.slug) {
+      window.history.pushState({}, '', `?article=${article.slug}`);
+    } else {
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  };
+
   const isLoadingRSS = loadingState === 'fetching_rss';
   const isSummarizing = loadingState === 'summarizing';
 
@@ -55,7 +78,7 @@ function App() {
           transition={{ duration: 0.3, ease: 'circOut' }}
           className="w-full"
         >
-          <ArticleDetail article={selectedArticle} onBack={() => setSelectedArticle(null)} />
+          <ArticleDetail article={selectedArticle} onBack={() => handleSelectArticle(null)} />
         </motion.div>
       ) : (
         <motion.div
@@ -117,7 +140,7 @@ function App() {
                       isHero={index === 0}
                       index={index}
                       dataSaver={isDataSaver}
-                      onSummaryClick={setSelectedArticle}
+                      onSummaryClick={handleSelectArticle}
                     />
                   </motion.div>
                 ))

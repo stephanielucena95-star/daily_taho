@@ -1,5 +1,6 @@
 
 import RSS from 'rss';
+import { generateSlug } from '../utils/slug.js';
 
 export const config = {
     runtime: 'nodejs',
@@ -110,15 +111,19 @@ export default async function handler(request) {
 
         topArticles.forEach(item => {
             const cleanText = (item.description || '').replace(/<[^>]*>?/gm, '').trim();
+            const slug = generateSlug(item.title);
+            const deepLink = `https://daily-taho.vercel.app/?article=${slug}`;
+
             feed.item({
                 title: item.title,
                 description: cleanText,
-                url: item.link, // Link to original source as requested/planned
-                guid: item.link,
+                url: deepLink, // Link to Daily Taho w/ slug
+                guid: deepLink,
                 date: item.pubDate,
                 enclosure: item.imageUrl ? { url: item.imageUrl } : undefined,
                 custom_elements: [
-                    { 'source': item.sourceName }
+                    { 'source': item.sourceName },
+                    { 'original_link': item.link } // Keep original link
                 ]
             });
         });

@@ -1,3 +1,4 @@
+import { generateSlug } from '../utils/slug.js';
 
 export const config = {
     runtime: 'edge',
@@ -89,34 +90,31 @@ const extractImageUrl = (html) => {
     return '';
 };
 
+const getWeightedCategory = (item) => {
+    const text = `${item.title} ${item.description || ''}`.toLowerCase();
+    const scores = {};
+    Object.keys(WEIGHTED_KEYWORDS).forEach(cat => scores[cat] = 0);
+    Object.entries(WEIGHTED_KEYWORDS).forEach(([category, data]) => {
+        if (data.keywords) {
+            data.keywords.forEach(keyword => {
+                const regex = new RegExp(`\\b${keyword.toLowerCase()}\\b`, 'i');
+                if (regex.test(text)) scores[category] += data.weight;
+            });
+        }
+    });
+    const candidates = Object.entries(scores).filter(([_, score]) => score > 0);
+    if (candidates.length === 0) return 'Nagbabagang Balita';
+
+    candidates.sort((a, b) => {
+        if (b[1] !== a[1]) return b[1] - a[1];
+        if (a[0] === 'Nagbabagang Balita') return -1;
+        if (b[0] === 'Nagbabagang Balita') return 1;
+        return 0;
+    });
+    return candidates[0][0];
+};
+
 export default async function handler(request) {
-    // Helper to determine category
-    const getWeightedCategory = (item) => {
-        const text = `${item.title} ${item.description || ''}`.toLowerCase();
-        const scores = {};
-        // Initialize
-        Object.keys(WEIGHTED_KEYWORDS).forEach(cat => scores[cat] = 0);
-        // Calculate
-        Object.entries(WEIGHTED_KEYWORDS).forEach(([category, data]) => {
-            if (data.keywords) {
-                data.keywords.forEach(keyword => {
-                    const regex = new RegExp(`\\b${keyword.toLowerCase()}\\b`, 'i');
-                    if (regex.test(text)) scores[category] += data.weight;
-                });
-            }
-        });
-        const candidates = Object.entries(scores).filter(([_, score]) => score > 0);
-        if (candidates.length === 0) return 'Nagbabagang Balita';
-
-        candidates.sort((a, b) => {
-            if (b[1] !== a[1]) return b[1] - a[1];
-            if (a[0] === 'Nagbabagang Balita') return -1;
-            if (b[0] === 'Nagbabagang Balita') return 1;
-            return 0;
-        });
-        return candidates[0][0];
-    };
-
     try {
         const fetchPromises = Object.entries(RSS_FEEDS).map(async ([name, url]) => {
             try {
@@ -124,7 +122,6 @@ export default async function handler(request) {
                 const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}${cacheBuster}`);
                 const json = await res.json();
                 if (json.status === 'ok') {
-                    // map items
                     return json.items.map(i => ({
                         title: i.title,
                         link: verifyAndFixLink(i.link, name),
@@ -143,24 +140,23 @@ export default async function handler(request) {
         const results = await Promise.all(fetchPromises);
         let validated = results.flat();
 
-        // 1. Filter out short descriptions
         validated = validated.filter(item => {
             const textLength = (item.description || "").replace(/<[^>]*>?/gm, '').length;
             return textLength > 20;
         });
 
-        // 2. Sort by newest first
         validated.sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
 
-        // 3. Take top 10
-        const topArticles = validated.slice(0, 10).map((item, idx) => {
+        const topArticles = validated.slice(0, 10).map((item) => {
             const cleanText = (item.description || '').replace(/<[^>]*>?/gm, '').trim();
+            const slug = generateSlug(item.title);
 
             return {
-                id: `rss-${Date.now()}-${idx}`,
+                id: slug,
                 title: item.title,
-                summary_en: cleanText, // Raw description
-                summary_ph: '', // No AI summary
+                slug: slug,
+                summary_en: cleanText,
+                summary_ph: '',
                 source_url: item.link,
                 image_url: item.imageUrl || '',
                 category: getWeightedCategory(item),
