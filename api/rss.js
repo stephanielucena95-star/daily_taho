@@ -1,6 +1,15 @@
 
 import RSS from 'rss';
-import { generateSlug } from '../utils/slug.js';
+
+// Inline slug generation (external imports don't work reliably in Vercel serverless)
+function generateSlug(title) {
+    return title
+        .toLowerCase()
+        .trim()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/[\s_-]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+}
 
 export const config = {
     runtime: 'nodejs',
