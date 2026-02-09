@@ -1,7 +1,4 @@
-
-import RSS from 'rss';
-
-// Inline slug generation (external imports don't work reliably in Vercel serverless)
+// Inline slug generation
 function generateSlug(title) {
     return title
         .toLowerCase()
@@ -11,11 +8,21 @@ function generateSlug(title) {
         .replace(/^-+|-+$/g, '');
 }
 
+// Manual XML escaping
+function escapeXml(text) {
+    if (!text) return '';
+    return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+}
+
 export const config = {
-    runtime: 'nodejs',
+    runtime: 'edge',
 };
 
-// Reusing constants and logic from api/feed.js
 const RSS_FEEDS = {
     GMA: 'https://data.gmanetwork.com/gno/rss/news/feed.xml',
     INQUIRER: 'https://newsinfo.inquirer.net/feed',
@@ -104,54 +111,56 @@ export default async function handler(request) {
 
         validated.sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
 
-        const topArticles = validated.slice(0, 20); // Top 20 for RSS
+        const topArticles = validated.slice(0, 20);
 
-        // Generate RSS
-        const feed = new RSS({
-            title: 'Daily Taho News Feed',
-            description: 'Latest headlines from top Philippine news sources, curated by Daily Taho.',
-            feed_url: 'https://daily-taho.vercel.app/api/rss',
-            site_url: 'https://daily-taho.vercel.app',
-            image_url: 'https://daily-taho.vercel.app/dt-black.png',
-            language: 'en',
-            pubDate: new Date().toUTCString(),
-            ttl: 60
-        });
-
-        topArticles.forEach(item => {
+        // Build RSS XML manually (no external dependencies)
+        const items = topArticles.map(item => {
             const cleanText = (item.description || '').replace(/<[^>]*>?/gm, '').trim();
             const slug = generateSlug(item.title);
             const deepLink = `https://daily-taho.vercel.app/?article=${slug}`;
+            const pubDate = new Date(item.pubDate).toUTCString();
 
-            feed.item({
-                title: item.title,
-                description: cleanText,
-                url: deepLink, // Link to Daily Taho w/ slug
-                guid: deepLink,
-                date: item.pubDate,
-                enclosure: item.imageUrl ? { url: item.imageUrl } : undefined,
-                custom_elements: [
-                    { 'source': item.sourceName },
-                    { 'original_link': item.link } // Keep original link
-                ]
-            });
-        });
+            return `    <item>
+      <title>${escapeXml(item.title)}</title>
+      <link>${escapeXml(deepLink)}</link>
+      <description>${escapeXml(cleanText.substring(0, 500))}</description>
+      <pubDate>${pubDate}</pubDate>
+      <guid isPermaLink="true">${escapeXml(deepLink)}</guid>
+      <source url="${escapeXml(item.link)}">${escapeXml(item.sourceName)}</source>
+    </item>`;
+        }).join('\n');
 
-        const xml = feed.xml({ indent: true });
+        const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Daily Taho News Feed</title>
+    <link>https://daily-taho.vercel.app</link>
+    <description>Latest headlines from top Philippine news sources, curated by Daily Taho.</description>
+    <language>en</language>
+    <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
+    <atom:link href="https://daily-taho.vercel.app/api/rss" rel="self" type="application/rss+xml"/>
+    <image>
+      <url>https://daily-taho.vercel.app/dt-black.png</url>
+      <title>Daily Taho</title>
+      <link>https://daily-taho.vercel.app</link>
+    </image>
+${items}
+  </channel>
+</rss>`;
 
         return new Response(
             xml,
             {
                 status: 200,
                 headers: {
-                    'content-type': 'application/xml',
+                    'content-type': 'application/rss+xml; charset=utf-8',
                     'cache-control': 'public, s-maxage=300, stale-while-revalidate=60',
                 },
             }
         );
     } catch (e) {
         return new Response(
-            `<error>${e.message}</error>`,
+            `<?xml version="1.0" encoding="UTF-8"?><error>${e.message}</error>`,
             { status: 500, headers: { 'content-type': 'application/xml' } }
         );
     }
