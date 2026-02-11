@@ -18,11 +18,16 @@ export const NewsCard: React.FC<NewsCardProps> = ({ article, isHero = false, ind
   const theme = CATEGORY_THEME[article.category] || CATEGORY_THEME[NewsCategory.ALL];
   const shouldShowImage = !dataSaver && article.imageUrl && !imgError;
 
+  // Generate deep link using slug
+  const deepLink = article.slug ? `/?article=${article.slug}` : '#';
+
   return (
     <motion.a
-      href={article.url || '#'}
-      target="_blank"
-      rel="noopener noreferrer"
+      href={deepLink}
+      onClick={(e) => {
+        e.preventDefault();
+        onSummaryClick(article);
+      }}
       whileHover={{ y: -4 }}
       className="flex flex-col bg-white rounded-xl shadow-[0_4px_30px_rgba(0,0,0,0.04)] border border-gray-100 overflow-hidden transition-all duration-300 hover:shadow-[0_15px_45px_rgba(0,0,0,0.08)] active:scale-[0.99] cursor-pointer group no-underline text-inherit block relative"
     >
