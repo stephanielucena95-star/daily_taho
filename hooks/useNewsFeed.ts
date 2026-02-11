@@ -238,8 +238,18 @@ export const useNewsFeed = (category: NewsCategory): UseNewsFeedResult => {
                 if (sentences && sentences.length >= 2) {
                     initialShort = sentences.slice(0, 2).join(' ');
                 }
+
+                // Inline slug generation
+                const slug = item.title
+                    .toLowerCase()
+                    .trim()
+                    .replace(/[^\w\s-]/g, '')
+                    .replace(/[\s_-]+/g, '-')
+                    .replace(/^-+|-+$/g, '');
+
                 return {
-                    id: `rss-${Date.now()}-${idx}`,
+                    id: slug || `rss-${Date.now()}-${idx}`,
+                    slug: slug,
                     title: item.title,
                     source: { name: item.sourceName },
                     category: getWeightedCategory(item),

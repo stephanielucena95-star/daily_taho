@@ -40,6 +40,7 @@ export const CATEGORY_THEME: Record<NewsCategory, { bg: string; text: string }> 
 export const MOCK_ARTICLES: Article[] = [
   {
     id: 'm1',
+    slug: 'welcome-to-daily-taho',
     title: 'Welcome to Daily Taho: Your Reliable News Hub',
     source: { name: 'System' },
     category: NewsCategory.ALL,
