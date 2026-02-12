@@ -11,6 +11,7 @@ import { NewsCategory, Article } from './types';
 import { ArrowPathIcon } from '@heroicons/react/24/outline';
 import { useNewsFeed } from './hooks/useNewsFeed';
 import { motion, AnimatePresence } from 'framer-motion';
+import { updateSEO } from './utils/seo';
 
 const SETTINGS_KEY = 'daily_taho_v15_settings';
 
@@ -20,6 +21,11 @@ function App() {
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
 
   const { articles, loadingState, refreshNews, fetchError } = useNewsFeed(activeCategory);
+
+  // Dynamic SEO Updates
+  useEffect(() => {
+    updateSEO(selectedArticle);
+  }, [selectedArticle]);
 
   useEffect(() => {
     const savedSettings = localStorage.getItem(SETTINGS_KEY);

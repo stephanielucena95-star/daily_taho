@@ -38,7 +38,7 @@ export const NewsCard: React.FC<NewsCardProps> = ({ article, isHero = false, ind
         <div className="w-full h-[160px] overflow-hidden border-b border-gray-50 bg-gray-50/50">
           <img
             src={article.imageUrl}
-            alt=""
+            alt={article.title}
             className="w-full h-full object-cover transition-all duration-700 group-hover:scale-105 group-hover:opacity-90"
             loading="lazy"
             decoding="async"

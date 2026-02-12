@@ -131,6 +131,17 @@ export const ArticleDetail: React.FC<ArticleDetailProps> = ({ article, onBack })
           </div>
 
           <div className="px-10 flex-grow flex flex-col">
+            {/* Article Image */}
+            {article.imageUrl && (
+              <div className="mb-10 rounded-[32px] overflow-hidden border border-gray-100 shadow-sm">
+                <img
+                  src={article.imageUrl}
+                  alt={article.title}
+                  className="w-full h-auto object-cover max-h-[400px]"
+                />
+              </div>
+            )}
+
             {/* Headline */}
             <h1 className="font-serif-display font-black text-[32px] sm:text-[44px] leading-[1.05] text-black mb-10 tracking-tight">
               {article.title}
@@ -223,3 +234,4 @@ export const ArticleDetail: React.FC<ArticleDetailProps> = ({ article, onBack })
     </div>
   );
 };
+
